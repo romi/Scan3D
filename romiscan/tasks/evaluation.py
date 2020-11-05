@@ -15,6 +15,7 @@ from romiscan.tasks import config
 from romiscan.tasks import proc2d
 from romiscan.tasks import proc3d
 from romiscanner.tasks.lpy import VirtualPlant
+from romiscan.tasks.proc3d import PointCloud
 
 
 class EvaluationTask(RomiTask):
@@ -419,3 +420,24 @@ class VoxelsEvaluation(EvaluationTask):
             histograms[c] = {"tp": tp.tolist(), "fp": fp.tolist(),
                              "tn": tn.tolist(), "fn": fn.tolist()}
         return histograms
+
+
+class CalibrationTest(RomiTask):
+    """
+    Extract specific features of a certain shape in a point cloud
+
+    Module: romiscan.tasks.calibration_test
+    Default upstream tasks: PointCloud
+    Upstream task format: ply
+    Output task format: json
+
+    """
+    upstream_task = luigi.TaskParameter(default=PointCloud)
+
+    object_shape = luigi.Parameter(default="cylinder")
+
+    def run(self):
+        point_cloud = io.read_point_cloud(self.input_file())
+        if self.object_shape == "cylinder":
+            out = proc3d.get_radius(point_cloud)
+            io.write_json(self.output_file(), out)

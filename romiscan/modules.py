@@ -31,13 +31,13 @@ MODULES = {
 TASKS = list(MODULES.keys())
 
 EVAL_MODULES = {
-    "VoxelGroundTruth": "romiscan.tasks.eval",
-    "VoxelsEvaluation": "romiscan.tasks.eval",
-    "PointCloudGroundTruth": "romiscan.tasks.eval",
-    "PointCloudEvaluation": "romiscan.tasks.eval",
-    "ClusteredMeshGroundTruth": "romiscan.tasks.eval",
-    "PointCloudSegmentationEvaluation": "romiscan.tasks.eval",
-    "Segmentation2DEvaluation": "romiscan.tasks.eval"
+    "VoxelGroundTruth": "romiscan.tasks.evaluation",
+    "VoxelsEvaluation": "romiscan.tasks.evaluation",
+    "PointCloudGroundTruth": "romiscan.tasks.evaluation",
+    "PointCloudEvaluation": "romiscan.tasks.evaluation",
+    "ClusteredMeshGroundTruth": "romiscan.tasks.evaluation",
+    "PointCloudSegmentationEvaluation": "romiscan.tasks.evaluation",
+    "Segmentation2DEvaluation": "romiscan.tasks.evaluation"
 }
 
 EVAL_TASKS = list(EVAL_MODULES.keys())

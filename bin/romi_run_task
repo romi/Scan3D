@@ -11,6 +11,7 @@ import tempfile
 from warnings import warn
 
 import toml
+from romiscan.modules import EVAL_MODULES
 from romiscan.modules import EVAL_TASKS
 from romiscan.modules import MODULES
 from romiscan.modules import TASKS
@@ -163,7 +164,10 @@ if __name__ == "__main__":
     if args.module is not None:
         module = args.module
     else:
-        module = MODULES[args.task]
+        try:
+            module = MODULES[args.task]
+        except:
+            module = EVAL_MODULES[args.task]
 
     # Handle datasets directory:
     #  - if a "Scan" or "VirtualScan" tasks is required, a directory should be created

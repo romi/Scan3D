@@ -11,7 +11,9 @@ import tempfile
 from warnings import warn
 
 import toml
-from romiscan.modules import MODULES, TASKS
+from romiscan.modules import EVAL_TASKS
+from romiscan.modules import MODULES
+from romiscan.modules import TASKS
 
 LUIGI_CMD = "luigi"
 LOGLEV = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -52,8 +54,8 @@ def parsing():
                                      """.format(HELP_URL))
 
     parser.add_argument('task', metavar='task', type=str,
-                        choices=TASKS,
-                        help=f"Luigi task to run: {', '.join(TASKS)}")
+                        choices=TASKS+EVAL_TASKS,
+                        help=f"Luigi task to run: {', '.join(TASKS+EVAL_TASKS)}")
 
     parser.add_argument('db_path', metavar='dataset_path', type=str,
                         help='FSDB scan dataset to process (path)')

@@ -22,6 +22,7 @@ MODULES = {
     # Quantification modules:
     "TreeGraph": "romiscan.tasks.arabidopsis",
     "AnglesAndInternodes": "romiscan.tasks.arabidopsis",
+    "CylinderRadius": "romiscan.tasks.calibration",
     # Visu modules:
     "Visualization": "romiscan.tasks.visualization",
     # Database modules:
@@ -37,7 +38,9 @@ EVAL_MODULES = {
     "PointCloudEvaluation": "romiscan.tasks.evaluation",
     "ClusteredMeshGroundTruth": "romiscan.tasks.evaluation",
     "PointCloudSegmentationEvaluation": "romiscan.tasks.evaluation",
-    "Segmentation2DEvaluation": "romiscan.tasks.evaluation"
+    "Segmentation2DEvaluation": "romiscan.tasks.evaluation",
+    "CylinderRadiusGroundTruth": "romiscan.tasks.evaluation",
+    "CylinderRadiusEvaluation": "romiscan.tasks.evaluation"
 }
 
 EVAL_TASKS = list(EVAL_MODULES.keys())

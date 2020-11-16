@@ -4,6 +4,8 @@ import tempfile
 import luigi
 import numpy as np
 import open3d as o3d
+import math
+import random
 from romidata import DatabaseConfig
 from romidata import RomiTask
 from romidata import io
@@ -16,6 +18,8 @@ from romiscan.tasks import proc2d
 from romiscan.tasks import proc3d
 from romiscanner.tasks.lpy import VirtualPlant
 from romiscan.tasks.proc3d import PointCloud
+
+NUM_POINTS = 10000
 
 
 class EvaluationTask(RomiTask):
@@ -422,7 +426,83 @@ class VoxelsEvaluation(EvaluationTask):
         return histograms
 
 
-class CalibrationTest(RomiTask):
+class CylinderRadiusGroundTruth(RomiTask):
+    """
+    Provide a point cloud with a cylindrical shape and a known radius
+    """
+    upstream_task = luigi.TaskParameter(ImagesFilesetExists)
+
+    def run(self):
+        total_number_of_resampled_pts = 10000
+        radius = random.uniform(1, 100)
+        # cylinder must (for the moment ...) be higher than large
+        height = random.uniform(1, 100) + (radius * 2)
+        mesh_cylinder = o3d.geometry.TriangleMesh()
+        mesh_cylinder = mesh_cylinder.create_cylinder(radius=radius, height=height)
+        triangle_id_list = np.array(mesh_cylinder.triangles)
+        triangle_vertex_list = np.array(mesh_cylinder.vertices)
+
+        v1 = []
+        v2 = []
+        v3 = []
+        total_triangles = len(triangle_id_list)
+        for i in range(total_triangles):
+            current_triangle = triangle_id_list[i]
+            v1_local_id = current_triangle[0]
+            v2_local_id = current_triangle[1]
+            v3_local_id = current_triangle[2]
+            v1_coordinate = triangle_vertex_list[v1_local_id]
+            v2_coordinate = triangle_vertex_list[v2_local_id]
+            v3_coordinate = triangle_vertex_list[v3_local_id]
+            v1.append(v1_coordinate)
+            v2.append(v2_coordinate)
+            v3.append(v3_coordinate)
+        v1np = np.asarray(v1)  # just a data structure conversion for the ease of calculations
+        v2np = np.asarray(v2)
+        v3np = np.asarray(v3)
+        all_triangle_areas = 0.5 * np.linalg.norm(np.cross(v2np - v1np, v3np - v1np), axis=1)
+        weighted_areas = all_triangle_areas / all_triangle_areas.sum()
+        random_triangle_list = np.random.choice(range(total_triangles), size=total_number_of_resampled_pts, p=weighted_areas)
+
+        all_sampled_points = []
+        total_number_of_resampled_pts = random_triangle_list.shape[0]  # new
+        for i in range(total_number_of_resampled_pts):
+            current_random_triangle = random_triangle_list[i]
+            # currentLabel = globalTriangleLabelList[currentRandomTriangle][0]
+            current_triangle_vertex_ids = triangle_id_list[current_random_triangle]  # a list
+            v1_id = current_triangle_vertex_ids[0]
+            v2_id = current_triangle_vertex_ids[1]
+            v3_id = current_triangle_vertex_ids[2]
+            v1_corrd = triangle_vertex_list[v1_id]  # a list
+            v2_corrd = triangle_vertex_list[v2_id]
+            v3_corrd = triangle_vertex_list[v3_id]
+
+            alpha = np.random.rand(1)
+            beta = np.random.rand(1)
+            if (alpha + beta) > 1:
+                alpha = 1 - alpha
+                beta = 1 - beta
+            gamma = 1 - (alpha + beta)
+
+            sampled_point = [sum(x) for x in zip([i * alpha for i in v1_corrd], [i * beta for i in v2_corrd],
+                                                 [i * gamma for i in v3_corrd])]
+            sampled_point_x = sampled_point[0][0]  # because these are in the form of list of list
+            sampled_point_y = sampled_point[1][0]
+            sampled_point_z = sampled_point[2][0]
+            new_point = [sampled_point_x, sampled_point_y, sampled_point_z]
+            all_sampled_points.append(new_point)
+
+        cylinder = np.array(all_sampled_points)
+        gt_cyl = o3d.geometry.PointCloud()
+        gt_cyl.points = o3d.utility.Vector3dVector(cylinder)
+        o3d.visualization.draw_geometries([gt_cyl])
+        io.write_point_cloud(self.output_file(), gt_cyl)
+        self.output().get().set_metadata({'radius': radius})
+
+        return gt_cyl
+
+
+class CylinderRadiusEvaluation(RomiTask):
     """
     Extract specific features of a certain shape in a point cloud
 
@@ -432,12 +512,54 @@ class CalibrationTest(RomiTask):
     Output task format: json
 
     """
-    upstream_task = luigi.TaskParameter(default=PointCloud)
-
-    object_shape = luigi.Parameter(default="cylinder")
+    upstream_task = luigi.TaskParameter(CylinderRadiusGroundTruth)
 
     def run(self):
-        point_cloud = io.read_point_cloud(self.input_file())
-        if self.object_shape == "cylinder":
-            out = proc3d.get_radius(point_cloud)
-            io.write_json(self.output_file(), out)
+        gt = io.read_point_cloud(self.input_file())
+        cylinder_gt_fileset = self.input().get()
+        pcd_points = np.array(gt.points)
+        gt_radius = cylinder_gt_fileset.get_metadata("radius")
+        print(gt_radius)
+
+        center = np.mean(pcd_points, axis=0)
+
+        bb = o3d.geometry.OrientedBoundingBox.create_from_points(o3d.utility.Vector3dVector(pcd_points))
+        box_points = np.asarray(bb.get_box_points())
+
+        # among the 8 points of the box, take the first one, find the 2 closest points from it
+        # then the mean of this 2 points to get the middle of the smallest square of the box
+        # then same with the square on the other side of the box in order to have the main direction of the organ
+        first_point = box_points[0]
+        closest_points = sorted(box_points, key=lambda p: np.linalg.norm(p - first_point))
+        first_square_middle = np.add(closest_points[1], closest_points[2]) / 2
+        opposite_square_middle = np.add(closest_points[5], closest_points[6]) / 2
+
+        orientation_vector = opposite_square_middle - first_square_middle
+
+        v = pcd_points - center
+        normal_vec = orientation_vector/ np.linalg.norm(orientation_vector)
+        dist = np.dot(v, normal_vec)
+        yo = normal_vec * dist[:, np.newaxis]
+        projected_points = pcd_points - yo
+
+        # visualization
+        pts_cyl = o3d.geometry.PointCloud()
+        pts_cyl.points = o3d.utility.Vector3dVector(pcd_points)
+        pts = o3d.geometry.PointCloud()
+        pts.points = o3d.utility.Vector3dVector(projected_points)
+        mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=5, origin=center)
+        cyl_orientation_open3d = o3d.geometry.LineSet()
+        ev1_pts = [center, np.add(orientation_vector, center)]
+        ev1_lines = [[0, 1]]
+        cyl_orientation_open3d.points = o3d.utility.Vector3dVector(ev1_pts)
+        cyl_orientation_open3d.lines = o3d.utility.Vector2iVector(ev1_lines)
+        # o3d.visualization.draw_geometries([pts, cyl_orientation_open3d, mesh_frame, pts_cyl]) #
+
+        a = 2 * projected_points
+        a[:, 2] = 1
+        pp_2d = np.delete(projected_points, 2, axis=1)
+        b = np.linalg.norm(pp_2d, axis=1) ** 2
+        cx, cy, comp = np.dot(np.linalg.inv(np.dot(a.T, a)), np.dot(a.T, b))
+        radius = math.sqrt(comp + cx ** 2 + cy ** 2)
+
+        io.write_json(self.output_file(), {"calculated_radius": radius, "gt_radius": gt_radius})

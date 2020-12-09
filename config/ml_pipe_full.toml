@@ -40,6 +40,7 @@ epochs = 1
 batch = 1
 learning_rate = 0.0001
 threshold = 0.01
+lighter_gpu_computation = true
 
 [Voxels]
 upstream_mask = "Segmentation2D"

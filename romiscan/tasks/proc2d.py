@@ -139,6 +139,8 @@ class Segmentation2D(Masks):
         Input pictures are cropped in the center to this size.
     model_segmentation_name : str??
         name of ".pt" file. Can be found at `https://db.romi-project.eu/models`
+    lighter_gpu_computation: luigi.BoolParameter
+        if true, gives the files one by one to the segmentation (for GPU memory)
 
     """
     type = None
@@ -157,6 +159,8 @@ class Segmentation2D(Masks):
     inverted_labels = luigi.ListParameter(default=["background"])
 
     resize = luigi.BoolParameter(default=False)
+
+    lighter_gpu_computation = luigi.BoolParameter(default=False)
 
     def requires(self):
         return {
@@ -180,30 +184,59 @@ class Segmentation2D(Masks):
         else:
             label_range = range(len(labels))
 
-        # APPLY SEGMENTATION
-        images_segmented, id_im = segmentation(self.Sx, self.Sy, images_fileset,
-                                               model_file, self.resize)
         output_fileset = self.output().get()
 
-        # Save class prediction as images, one by one, class per class
-        logger.debug(
-            "Saving the .astype(np.uint8)segmented images, takes around 15 s")
-        for i in range(images_segmented.shape[0]):
-            for j in label_range:
-                f = output_fileset.create_file('%03d_%s' % (i, labels[j]))
-                im = images_segmented[i, j, :, :].cpu().numpy()
-                if labels[j] in self.inverted_labels:
-                    im = 1.0 - im
-                if self.binarize:
-                    im = im > self.threshold
-                    if self.dilation > 0:
-                        im = proc2d.dilation(im, self.dilation)
-                im = (im * 255).astype(np.uint8)
-                if labels[j] in self.inverted_labels:
-                    im = 255 - im
-                io.write_image(f, im, 'png')
-                orig_metadata = images_fileset[i].get_metadata()
-                f.set_metadata({'image_id': id_im[i][0], **orig_metadata,
-                                'channel': labels[j]})
-            output_fileset.set_metadata("label_names",
-                                        [labels[j] for j in label_range])
+        if self.lighter_gpu_computation:
+            # ugly stuff, apply segmentation file by file and not directly on a full fileset to allocate less gpu memory
+            for i, image_file in enumerate(images_fileset):
+                images_segmented, id_im = segmentation(self.Sx, self.Sy, [image_file],
+                                                       model_file, self.resize)
+
+                for j in label_range:
+                    f = output_fileset.create_file('%03d_%s' % (i, labels[j]))
+                    im = images_segmented[0, j, :, :].cpu().numpy()
+
+                    if labels[j] in self.inverted_labels:
+                        im = 1.0 - im
+                    if self.binarize:
+                        im = im > self.threshold
+                        if self.dilation > 0:
+                            im = proc2d.dilation(im, self.dilation)
+                    im = (im * 255).astype(np.uint8)
+                    if labels[j] in self.inverted_labels:
+                        im = 255 - im
+                    io.write_image(f, im, 'png')
+                    orig_metadata = images_fileset[i].get_metadata()
+                    f.set_metadata({'image_id': id_im[0][0], **orig_metadata,
+                                    'channel': labels[j]})
+
+                del images_segmented
+                output_fileset.set_metadata("label_names",
+                                            [labels[j] for j in label_range])
+        else:
+            # APPLY SEGMENTATION
+            images_segmented, id_im = segmentation(self.Sx, self.Sy, images_fileset,
+                                                   model_file, self.resize)
+
+            # Save class prediction as images, one by one, class per class
+            logger.debug(
+                "Saving the .astype(np.uint8)segmented images, takes around 15 s")
+            for i in range(images_segmented.shape[0]):
+                for j in label_range:
+                    f = output_fileset.create_file('%03d_%s' % (i, labels[j]))
+                    im = images_segmented[i, j, :, :].cpu().numpy()
+                    if labels[j] in self.inverted_labels:
+                        im = 1.0 - im
+                    if self.binarize:
+                        im = im > self.threshold
+                        if self.dilation > 0:
+                            im = proc2d.dilation(im, self.dilation)
+                    im = (im * 255).astype(np.uint8)
+                    if labels[j] in self.inverted_labels:
+                        im = 255 - im
+                    io.write_image(f, im, 'png')
+                    orig_metadata = images_fileset[i].get_metadata()
+                    f.set_metadata({'image_id': id_im[i][0], **orig_metadata,
+                                    'channel': labels[j]})
+                output_fileset.set_metadata("label_names",
+                                            [labels[j] for j in label_range])

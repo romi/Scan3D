@@ -1,0 +1,44 @@
+[Colmap]
+upstream_task = "ImagesFilesetExists"
+
+[Colmap.bounding_box]  # default to None
+x = [250, 550]
+y = [250, 550]
+z = [-200, 200]
+
+[Undistorted]
+upstream_task = "ImagesFilesetExists"
+
+[ModelFileset]
+scan_id = "models"
+
+[Segmentation2D]
+upstream_task = "Undistorted"
+
+[Voxels]
+upstream_mask = "Segmentation2D"
+upstream_colmap = "Colmap"
+
+[PointCloud]
+upstream_task = "Voxels"
+
+[SegmentedPointCloud]
+upstream_segmentation = "Segmentation2D"
+upstream_task = "PointCloud"
+
+[ClusteredMesh]
+upstream_task = "SegmentedPointCloud"
+
+[AnglesAndInternodes]
+upstream_task = "ClusteredMesh"
+
+[Visualization]
+upstream_point_cloud = "PointCloud"
+upstream_mesh = "TriangleMesh"
+upstream_colmap = "Colmap"
+upstream_angles = "AnglesAndInternodes"
+upstream_skeleton = "CurveSkeleton"
+upstream_images = "ImagesFilesetExists"
+
+[Clean]
+no_confirm = true

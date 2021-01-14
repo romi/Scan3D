@@ -1,49 +1,23 @@
 [Colmap]
 upstream_task = "ImagesFilesetExists"
-matcher = "exhaustive"
-compute_dense = false
-align_pcd = true
-calibration_scan_id = ""
-
-[Colmap.cli_args.feature_extractor]
-"--ImageReader.single_camera" = "1"  # in colmap default to 0
-
-[Colmap.cli_args.model_aligner]
-"--robust_alignment_max_error" = "10"
 
 [Colmap.bounding_box]  # default to None
 x = [250, 550]
 y = [250, 550]
-z = [-200, 200]
+z = [-200, 150]
 
 [Undistorted]
 upstream_task = "ImagesFilesetExists"
 
 [Masks]
 upstream_task = "Undistorted"  # other option "ImagesFilesetExists"
-type = "linear"
-parameters = "[0,1,0]"
-dilation = 5  # default to 0
-binarize = true
-threshold = 0.3
 
 [Voxels]
 upstream_mask = "Masks"
 upstream_colmap = "Colmap"
-use_colmap_poses = true
-voxel_size = 1.0
-type = "carving"
-log = false  # default to true
-invert = false
-labels = "[]"
 
 [PointCloud]
 upstream_task = "Voxels"
-level_set_value = 1.0
-log = false
-background_prior = -200  # default 1.0
-min_contrast = 10.0
-min_score = 0.2
 
 [TriangleMesh]
 upstream_task = "PointCloud"
@@ -53,13 +27,9 @@ upstream_task = "TriangleMesh"
 
 [TreeGraph]
 upstream_task = "CurveSkeleton"
-z_axis = 2
-stem_axis_inverted = false
 
 [AnglesAndInternodes]
 upstream_task = "TreeGraph"
-characteristic_length = 1.0
-stem_axis_inverted = false
 
 [Visualization]
 upstream_point_cloud = "PointCloud"
@@ -68,9 +38,6 @@ upstream_colmap = "Colmap"
 upstream_angles = "AnglesAndInternodes"
 upstream_skeleton = "CurveSkeleton"
 upstream_images = "ImagesFilesetExists"
-max_image_size = 1500
-max_point_cloud_size = 10000
-thumbnail_size = 150
 
 [Clean]
 no_confirm = true

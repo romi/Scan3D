@@ -5,7 +5,6 @@ import argparse
 import glob
 import json
 import os
-import pprint
 import subprocess
 import tempfile
 from warnings import warn
@@ -151,11 +150,6 @@ if __name__ == "__main__":
         config = {**config, **c}
     else:
         print("Using a PREVIOUS configuration.")
-
-    # Print the used configuration:
-    pp = pprint.PrettyPrinter(indent=2)
-    print("Using the following configuration: ")
-    pp.pprint(config)
 
     # TODO: Not really sure what happens here...
     if args.module is not None:

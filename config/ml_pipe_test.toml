@@ -14,6 +14,9 @@ scan_id = "models"
 
 [Segmentation2D]
 upstream_task = "Undistorted"
+model_fileset = "ModelFileset"
+model_id = "Resnetdataset_gl_png_896_896_epoch50" # no default value
+query = "{\"channel\":\"rgb\"}" # default {}
 
 [Voxels]
 upstream_mask = "Segmentation2D"

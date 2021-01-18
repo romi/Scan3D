@@ -207,11 +207,15 @@ class TriangleMesh(RomiTask):
 
     """
     upstream_task = luigi.TaskParameter(default=PointCloud)
+    library = luigi.Parameter(default="cgal")  # ["cgal", "open3d"]
 
     def run(self):
         from romiscan import proc3d
         point_cloud = io.read_point_cloud(self.input_file())
-        out = proc3d.pcd2mesh(point_cloud)
+        if self.library == "cgal":
+            out = proc3d.pcd2mesh(point_cloud)
+        elif self.library == "open3d":
+            out = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_cloud)
         io.write_triangle_mesh(self.output_file(), out)
 
 

@@ -16,7 +16,9 @@ usage(){
   echo "  ./check_test_geom_pipe.sh [OPTIONS]
   "
   echo "DESCRIPTION:"
-  echo "  Clean the dataset then run 'romi_run_task <task> <dataset> --config <config>'.
+  echo "  Run the geometric reconstruction pipeline with predefined datasets and configurations.
+
+  Clean the dataset then run 'romi_run_task <task> <dataset> --config <config>'.
   Some information are printed for required task.
   By default report for tasks 'Colmap', 'PointCloud' & 'AnglesAndInternodes'.
   "
@@ -36,14 +38,14 @@ usage(){
     Output a usage message and exit.
   "
   echo "EXAMPLES:"
-  echo "# Test geometric reconstruction pipeline on default real plant (safe mode):
-  $ check_geom_pipe.sh --tmp
+  echo "  #1 - Run the geometric reconstruction pipeline on default 'real plant' test dataset (safe mode):
+  $ ./check_geom_pipe.sh --tmp
   "
-  echo "# Test CNN geometric pipeline up to the 'PointCloud' task on virtual plant (safe mode):
-  $ check_geom_pipe.sh -t PointCloud --virtual --tmp
+  echo "  #2 - Run the geometric pipeline up to the 'PointCloud' task on 'virtual plant' test dataset (safe mode):
+  $ ./check_geom_pipe.sh -t PointCloud --virtual --tmp
   "
-  echo "# Test geometric reconstruction pipeline with another config & dataset (safe mode):
-  $ check_geom_pipe.sh --config ../config/geom_pipe_test.toml --dataset /data/ROMI/DB/arabido_test2/ --tmp
+  echo "  #3 - Run a geometric reconstruction pipeline with another config & test dataset (safe mode):
+  $ ./check_geom_pipe.sh --config ../config/geom_pipe_test.toml --dataset /data/ROMI/DB/arabido_test2/ --tmp
   "
 }
 tmp=0

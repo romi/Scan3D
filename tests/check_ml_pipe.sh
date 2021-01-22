@@ -15,14 +15,16 @@ MODEL_DIRECTORY="models/models"
 
 usage(){
   echo "USAGE:"
-  echo "  ./check_test_geom_pipe.sh [OPTIONS]
+  echo "  ./check_test_ml_pipe.sh [OPTIONS]
   "
   echo "DESCRIPTION:"
-  echo "  Clean the dataset then run 'romi_run_task <task> <dataset> --config <config>'.
+  echo "  Run the CNN reconstruction pipeline with predefined datasets and configurations.
+
+  Clean the dataset then run 'romi_run_task <task> <dataset> --config <config>'.
   Some information are printed for required task.
   By default report for tasks 'Colmap', 'PointCloud' & 'AnglesAndInternodes'.
 
-  It will download a trained organ segmentation model if missing from the database.
+  It may download a trained organ segmentation model if missing from the database.
   "
   echo "OPTIONS:"
   echo "  -c, --config
@@ -40,14 +42,14 @@ usage(){
     Output a usage message and exit.
   "
   echo "EXAMPLES:"
-  echo "# Test CNN reconstruction pipeline on default real plant (safe mode):
-  $ check_ml_pipe.sh --tmp
+  echo "  #1 - Run the CNN reconstruction pipeline on default 'real plant' test dataset (safe mode):
+  $ ./check_ml_pipe.sh --tmp
   "
-  echo "# Test CNN reconstruction pipeline up to the 'PointCloud' task on virtual plant (safe mode):
-  $ check_ml_pipe.sh -t PointCloud --virtual --tmp
+  echo "  #2 - Run the CNN reconstruction pipeline up to the 'SegmentedPointCloud' task on 'virtual plant' test dataset (safe mode):
+  $ ./check_ml_pipe.sh -t SegmentedPointCloud --virtual --tmp
   "
-  echo "# Test CNN reconstruction pipeline with another config & dataset (safe mode):
-  $ check_ml_pipe.sh --config ../config/ml_pipe_test.toml --dataset /data/ROMI/DB/arabido_test2/ --tmp
+  echo "  #3 - Run the CNN reconstruction pipeline with another config & test dataset (safe mode):
+  $ ./check_ml_pipe.sh --config ../config/ml_pipe_test.toml --dataset /data/ROMI/DB/arabido_test2/ --tmp
   "
 }
 while [ "$1" != "" ]; do

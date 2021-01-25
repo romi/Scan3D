@@ -215,7 +215,7 @@ class TriangleMesh(RomiTask):
         if self.library == "cgal":
             out = proc3d.pcd2mesh(point_cloud)
         elif self.library == "open3d":
-            out = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_cloud)
+            out, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_cloud)
         io.write_triangle_mesh(self.output_file(), out)
 
 

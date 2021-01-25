@@ -74,12 +74,31 @@ def compute_mst(G, main_stem, nodes):
     # (for computing minimum spanning tree)
     G = G.copy()
     distances = {}
+    tot = []
     for i in nodes:
         _, distances[i] = nx.dijkstra_predecessor_and_distance(G, i)
+        tot.append(list(distances[i].values()))
+    total_distances = np.array(tot)
+    total_distances.flatten()
+    try:
+        max_dist = np.amax(total_distances)
+    except ValueError:
+        max_dist = 10000
 
     distance_to_node = {}
     for n in G.nodes():
-        distance_to_node[n] = min(distances[i][n] for i in nodes)
+        dist = []
+        for i in nodes:
+            try:
+                dist.append(distances[i][n])
+            except:
+                logger.warning(f"No distance found for node {i}")
+        if len(dist):
+            distance_to_node[n] = min(dist)
+        else:
+            distance_to_node[n] = max_dist
+        # distance_to_node[n] = min(distances[i][n] for i in nodes)
+
 
     def node_penalty(u, v):
         if u in main_stem or v in main_stem:
@@ -492,7 +511,7 @@ def compute_angles_and_internodes(T, n_nodes_fruit=5, n_nodes_stem=5):
 
         node_fruit_points = [np.array(T.nodes[n]["position"]) for n in get_fruit(T, i)]
 
-        if len(node_fruit_points):
+        if len(node_fruit_points) > 1:
             vertices_fruit_plane_est = node_fruit_points[0:n_nodes_fruit]
             idx = main_stem.index(branching_points[i])
             stem_neighbors_id = main_stem[idx - n_nodes_stem // 2:idx + n_nodes_stem // 2]

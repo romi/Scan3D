@@ -208,14 +208,46 @@ class TriangleMesh(RomiTask):
     """
     upstream_task = luigi.TaskParameter(default=PointCloud)
     library = luigi.Parameter(default="open3d")  # ["cgal", "open3d"]
+    filtering = luigi.Parameter(default="most connected triangles")  # ["", "most connected triangles", "largest connected triangles", "dbscan point-cloud"]
 
     def run(self):
         from romiscan import proc3d
         point_cloud = io.read_point_cloud(self.input_file())
+
+        # TODO: Add DBSCAN clustering method to filter the point-cloud prior to meshing
+        if self.filtering == "dbscan point-cloud":
+            raise NotImplementedError("Coming soon!")
+
         if self.library == "cgal":
             out = proc3d.pcd2mesh(point_cloud)
         elif self.library == "open3d":
             out, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_cloud)
+
+        # If a filtering method based on connected triangles is required, perform it:
+        if "connected triangle" in self.filtering:
+            triangle_clusters, cluster_n_triangles, cluster_area = out.cluster_connected_triangles()
+            triangle_clusters = np.asarray(triangle_clusters)
+            cluster_n_triangles = np.asarray(cluster_n_triangles)
+            cluster_area = np.asarray(cluster_area)
+            n_cluster = cluster_n_triangles.shape[0]
+            logger.info(f"Found {n_cluster} clusters of triangles!")
+            logger.info(f"Area of each cluster: {cluster_area}.")
+            logger.info(f"Number of triangles in each cluster: {cluster_n_triangles}.")
+        if self.filtering == "most connected triangles":
+            # Get the index of the largest cluster in the number of triangles
+            largest_cluster_idx = cluster_n_triangles.argmax()
+            logger.info(f"Cluster #{largest_cluster_idx} was selected!")
+            # Creates a mask of triangle to remove and filter them out of the mesh:
+            triangles_to_remove = triangle_clusters != largest_cluster_idx
+            out.remove_triangles_by_mask(triangles_to_remove)
+        elif self.filtering == "largest connected triangles":
+            # Get the index of the largest cluster in the number of total area
+            largest_cluster_idx = cluster_area.argmax()
+            logger.info(f"Cluster #{largest_cluster_idx} was selected!")
+            # Creates a mask of triangle to remove and filter them out of the mesh:
+            triangles_to_remove = triangle_clusters != largest_cluster_idx
+            out.remove_triangles_by_mask(triangles_to_remove)
+
         io.write_triangle_mesh(self.output_file(), out)
 
 

@@ -52,6 +52,7 @@ min_score = 0.2
 [TriangleMesh]
 upstream_task = "PointCloud"
 library = "open3d"
+filtering = "most connected triangles"  # ["", "most connected triangles", "largest connected triangles", "dbscan point-cloud"]
 
 [CurveSkeleton]
 upstream_task = "TriangleMesh"

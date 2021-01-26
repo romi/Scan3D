@@ -25,7 +25,7 @@ type = "linear"
 parameters = "[0,1,0]"
 dilation = 5  # default to 0
 binarize = true
-threshold = 0.3
+threshold = 0.18
 
 [Voxels]
 upstream_mask = "Masks"
@@ -47,6 +47,8 @@ min_score = 0.2
 
 [TriangleMesh]
 upstream_task = "PointCloud"
+library = "open3d"
+filtering = "most connected triangles"  # ["", "most connected triangles", "largest connected triangles", "dbscan point-cloud"]
 
 [CurveSkeleton]
 upstream_task = "TriangleMesh"

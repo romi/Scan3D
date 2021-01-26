@@ -207,7 +207,7 @@ class TriangleMesh(RomiTask):
 
     """
     upstream_task = luigi.TaskParameter(default=PointCloud)
-    library = luigi.Parameter(default="cgal")  # ["cgal", "open3d"]
+    library = luigi.Parameter(default="open3d")  # ["cgal", "open3d"]
 
     def run(self):
         from romiscan import proc3d

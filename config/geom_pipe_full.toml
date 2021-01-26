@@ -27,9 +27,9 @@ upstream_task = "ImagesFilesetExists"
 upstream_task = "Undistorted" # other option "ImagesFilesetExists"
 type = "linear"
 parameters = "[0,1,0]"
-dilation = 5 # default to 0
+dilation = 1 # default to 0
 binarize = true
-threshold = 0.3
+threshold = 0.2
 
 [Voxels]
 upstream_mask = "Masks"
@@ -51,6 +51,7 @@ min_score = 0.2
 
 [TriangleMesh]
 upstream_task = "PointCloud"
+library = "open3d"
 
 [CurveSkeleton]
 upstream_task = "TriangleMesh"

@@ -98,15 +98,17 @@ if [ "$tmp" = 1 ]; then
   touch "$tmp_db/romidb"
   # Get the directory name (last in hierarchy):
   data_dir=`basename "$dataset"`
+  # Add a date prefix to make folder unique and a 'GEOM' tag to further explicit test folder name
+  data_dir="$(date +%F_%H-%M-%S)_GEOM_$data_dir"
   # Creates the temporary directory path variable with it
   tmp_dataset="$tmp_db/$data_dir"
   # Make sure it does not exist or remove it:
   if [[ -d $tmp_dataset ]]; then
     rm -rf $tmp_dataset
   fi
-  # Copy the data
-  echo "Copying '$dataset' to '$tmp_db'..."
-  cp -R $dataset "$tmp_db"
+  # Copy the dataset to new temporary folder
+  echo "Copying '$dataset' to '$tmp_dataset'..."
+  cp -R "$dataset" "$tmp_dataset"
   # Finally replace the dataset location by the temporary one
   dataset="$tmp_dataset"
 fi

@@ -101,21 +101,23 @@ if [ "$tmp" = 1 ]; then
   touch "$tmp_db/romidb"
   # Get the directory name (last in hierarchy):
   data_dir=`basename "$dataset"`
+  # Add a date prefix to make folder unique and a 'ML' tag to further explicit test folder name
+  data_dir="$(date +%F_%H-%M-%S)_ML_$data_dir"
   # Creates the temporary directory path variable with it
   tmp_dataset="$tmp_db/$data_dir"
   # Make sure it does not exist or remove it:
   if [[ -d $tmp_dataset ]]; then
     rm -rf $tmp_dataset
   fi
-  # Copy the data
-  echo "Copying '$dataset' to '$tmp_db'..."
-  cp -R $dataset "$tmp_db"
-  # Copy the models fileset
+  # Copy the dataset to new temporary folder
+  echo "Copying '$dataset' to 'tmp_dataset'..."
+  cp -R $dataset "$tmp_dataset"
+  # Copy the models fileset to new temporary folder
   echo "Copying '$db/models' to '$tmp_db/models'..."
   cp -R "$db/models" "$tmp_db/."
-  # Finally replace the database & dataset location by the temporary ones
+  # Finally replace the database & dataset locations by the temporary ones
   dataset="$tmp_dataset"
-  db=$tmp_db
+  db="$tmp_db"
 fi
 
 ##### Check machine learning pipeline

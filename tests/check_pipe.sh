@@ -84,7 +84,15 @@ if [ -z "$PYOPENCL_CTX" ]; then
 fi
 
 ##### Check geometric pipeline
+echo "
+
+Testing the GEOMETRICAL pipeline...
+"
 ./check_geom_pipe.sh $opts
 
 ##### Check machine learning pipeline
+echo "
+
+Testing the CNN based pipeline...
+"
 ./check_ml_pipe.sh $opts
